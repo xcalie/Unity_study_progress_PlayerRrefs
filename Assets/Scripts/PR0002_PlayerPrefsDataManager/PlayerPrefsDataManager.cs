@@ -80,8 +80,11 @@ public class PlayerPrefsDataManager
 
         #endregion
     }
-
-
+    /// <summary>
+    /// 分装存储数据的方法
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="keyName"></param>
     private void SaveValue(object value, string keyName)
     {
         // 直接通过PlayerPrefs进行存储
@@ -113,12 +116,36 @@ public class PlayerPrefsDataManager
             // 父类装子类
             IList list = value as IList;
             // 先存储数量
+            int index = 0;
             PlayerPrefs.SetInt(keyName, list.Count);
             foreach ( object obj in list )
             {
                 // 存储具体的值
-
+                SaveValue(obj, keyName + index);
+                ++index;
             }
+        }
+        // 判断是不是Dictionary类型 通过Dictionary 的父类来判断
+        else if (typeof(IDictionary).IsAssignableFrom(fieldType))
+        {
+            //父类装子类
+            IDictionary dic = value as IDictionary;
+            //先存字典长度
+            PlayerPrefs.SetInt(keyName, dic.Count);
+            //遍历存储Dic里面的具体值
+            //用于区分 表示的 区分 key
+            int index = 0;
+            foreach (object key in dic.Keys)
+            {
+                SaveValue(key, keyName + "_key_" + index);
+                SaveValue(dic[key], keyName + "_value_" + index);
+                ++index;
+            }
+        }
+        else
+        {
+            // 再嵌套一遍，可以解构类中类
+            SaveData(value, keyName);
         }
     }
 
@@ -140,9 +167,53 @@ public class PlayerPrefsDataManager
         // 根据传入的类型 和 keyName
         // 依据数据的类型 存储数据时key的凭借来进行数据的获取和返回
 
-        Type[] types = type.GetInterfaces();
+        // 根据传入的Type创建应该对象 用于存储数据
+        object data = Activator.CreateInstance(type);
+        //要往new出来的对象中存储数据 填充数据
+        //得到所有的字段
+        FieldInfo[] infos = type.GetFields();
+        // 用于拼接key的字符串
+        string loadKeyName = "";
+        // 用于存储单个对象信息的对象
+        FieldInfo info;
+        for ( int i = 0; i < infos.Length; i++ )
+        {
+            info = infos[i];
+            // key的拼接规则 一定会save的规则一模一样
+            loadKeyName = keyName + "_" + type.Name + "_" + info.FieldType.Name + "_" + info.Name;
+            
+            // 有key 就可以结合 PlayerPrefs来读取
+            info.SetValue(data, LoadValue(info.FieldType, loadKeyName));
+        }
 
+        return data;
+    }
 
+    /// <summary>
+    /// 得到单个数据的方法
+    /// </summary>
+    /// <param name="fieldType"></param>
+    /// <param name="keyName"></param>
+    /// <returns></returns>
+    private object LoadValue(Type fieldType, string keyName)
+    {
+        // 根据字段类型 来判断用哪个API
+        if (fieldType == typeof(int))
+        {
+            return PlayerPrefs.GetInt(keyName);
+        }
+        else if (fieldType == typeof(float))
+        {
+            return PlayerPrefs.GetFloat(keyName);
+        }
+        else if (fieldType == typeof(string))
+        {
+            return PlayerPrefs.GetString(keyName);
+        }
+        else if (fieldType == typeof(bool))
+        {
+            return PlayerPrefs.GetInt(keyName, 0 ) == 1 ? true : false;
+        }
         return null;
     }
 }
