@@ -4,38 +4,26 @@ using UnityEngine;
 
 public class PlayerInfo
 {
-    public int age = 10;
-    public string name = "未命名";
-    public float height = 177.5f;
+    public int age;
+    public string name;
+    public float height;
     public bool sex = true;
 
-    public List<int> list = new List<int>();
+    public List<int> list;
 
-    public Dictionary<int, int> Keys = new Dictionary<int, int>();
+    public Dictionary<int, int> Keys;
 
-    public ItemInfo iteminfo = new ItemInfo(3,99);
+    public ItemInfo iteminfo;
 
-    public List<ItemInfo> items = new List<ItemInfo>() {
-        new ItemInfo(3, 22),
-        new ItemInfo(4, 33)
-    };
+    public List<ItemInfo> items;
 
-    public Dictionary<int, ItemInfo> itemDic = new Dictionary<int, ItemInfo>() {
-        {3, new ItemInfo(3,123) },
-        {4, new ItemInfo(4, 444) },
-    };
+    public Dictionary<int, ItemInfo> itemDic;
 
 
-
-    public PlayerInfo(params int[] list)
+    public PlayerInfo()
     {
-        for (int i = 0; i < list.Length; i++)
-        {
-            this.list.Add(list[i]);
-        }
+
     }
-
-
 
 }
 
@@ -63,12 +51,23 @@ public class Test : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        PlayerInfo info = new PlayerInfo(2,3,4,5);
-        info.Keys.Add(2, 3);
-        info.Keys.Add(3, 8);
-        PlayerPrefsDataManager.Instance.SaveData(info, "Player1");
+        //PlayerPrefs.DeleteAll();
 
-        PlayerInfo info1 = PlayerPrefsDataManager.Instance.LoadData(typeof(PlayerInfo), "Player1") as PlayerInfo;
+        PlayerInfo p2 = PlayerPrefsDataManager.Instance.LoadData(typeof(PlayerInfo), "Player1") as PlayerInfo;
+
+        // 模拟逻辑
+        p2.age = 18;
+        p2.name = "XC";
+        p2.height = 1000;
+        p2.sex = true;
+
+        p2.items.Add(new ItemInfo(2, 3));
+        p2.items.Add(new ItemInfo(4, 4));
+
+        //p2.itemDic.Add(3, new ItemInfo(5, 5));
+        //p2.itemDic.Add(4, new ItemInfo(6, 6));
+
+        PlayerPrefsDataManager.Instance.SaveData(p2, "Player1");
     }
 
     // Update is called once per frame

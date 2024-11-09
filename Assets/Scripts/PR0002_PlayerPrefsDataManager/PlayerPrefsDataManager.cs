@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Reflection;
+using UnityEditor.Experimental.GraphView;
 
 /// <summary>
-/// PlayPrefts数据管理类 统一管理数据的存储和读取
+/// PlayPrefs数据管理类 统一管理数据的存储和读取
 /// </summary>
 public class PlayerPrefsDataManager
 {
@@ -79,6 +80,9 @@ public class PlayerPrefsDataManager
         }
 
         #endregion
+
+        //中途存储，防止闪退
+        PlayerPrefs.Save();
     }
     /// <summary>
     /// 分装存储数据的方法
@@ -214,6 +218,35 @@ public class PlayerPrefsDataManager
         {
             return PlayerPrefs.GetInt(keyName, 0 ) == 1 ? true : false;
         }
-        return null;
+        else if (typeof(IList).IsAssignableFrom(fieldType))
+        {
+            // 得到数量
+            int count = PlayerPrefs.GetInt(keyName, 0);
+            // 实例化
+            IList list = Activator.CreateInstance(fieldType) as IList;
+            for ( int i = 0; i < count; i++ )
+            {
+                // 目的是得到list中泛型的类型
+                list.Add(LoadValue(fieldType.GetGenericArguments()[0], keyName + i));
+            }
+            return list;
+        }
+        else if (typeof(IDictionary).IsAssignableFrom(fieldType))
+        {
+            // 得到字典的长度
+            int count = PlayerPrefs.GetInt(keyName, 0);
+            // 实例化字典
+            IDictionary dic = Activator.CreateInstance(fieldType) as IDictionary;
+            Type[] kvType = fieldType.GetGenericArguments();
+            for ( int i = 0; i < count; i++)
+            {
+                dic.Add(LoadValue(kvType[0], keyName + "_key_" + i), LoadValue(kvType[1], keyName + "_value_" + i));
+            }
+            return dic;
+        }
+        else
+        {
+            return LoadData(fieldType, keyName);
+        }
     }
 }
